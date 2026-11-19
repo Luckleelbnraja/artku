@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>{{ 'Daftar' if mode == 'daftar' else 'Masuk' }} ke Studio Analisis Art_ku</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Figtree:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body class="auth-page">
+  <header class="auth-topbar">
+    <div class="w">
+      <a class="brand" href="{{ url_for('halaman_masuk') }}"><i></i>Art_ku</a>
+    </div>
+  </header>
+
+  <main class="auth-wrap">
+    <div class="auth-card">
+      <!-- Kolom Kiri: Penjelasan Studio Analisis Art_ku -->
+      <section class="auth-pitch">
+        <h1 id="pitchTitle">
+          {% if mode == 'daftar' %}
+            Daftar ke Studio<br>Analisis Art_ku
+          {% else %}
+            Masuk ke Studio<br>Analisis Art_ku
+          {% endif %}
+        </h1>
+        <p class="auth-lead">
+          Simpan hasil klasifikasi karya seni digital dan buka kembali prediksi beserta heatmap kapan saja.
+        </p>
+        <ol class="auth-points">
+          <li>
+            <span class="num">1</span>
+            <span>Riwayat gambar tersimpan otomatis per akun</span>
+          </li>
+          <li>
+            <span class="num">2</span>
+            <span>Buka ulang label prediksi, confidence, dan heatmap</span>
+          </li>
+        </ol>
+      </section>
+
+      <!-- Kolom Kanan: Tab Masuk / Daftar & Formulir -->
+      <section class="auth-form-pane">
+        <div class="auth-tabs" role="tablist">
+          <a
+            href="{{ url_for('halaman_masuk') }}"
+            id="tabMasuk"
+            role="tab"
+            class="auth-tab {{ 'active' if mode != 'daftar' else '' }}"
+            aria-selected="{{ 'true' if mode != 'daftar' else 'false' }}"
+          >Masuk</a>
+          <a
+            href="{{ url_for('halaman_daftar') }}"
+            id="tabDaftar"
+            role="tab"
+            class="auth-tab {{ 'active' if mode == 'daftar' else '' }}"
+            aria-selected="{{ 'true' if mode == 'daftar' else 'false' }}"
+          >Daftar</a>
+        </div>
+
+        <!-- Banner info sesi berakhir / sudah keluar -->
+        <div id="authInfoBanner" class="auth-banner info" {{ '' if info else 'hidden' }}>
+          {{ info or '' }}
+        </div>
+
+        <!-- Banner error global -->
+        <div id="authErrorBanner" class="auth-banner err" role="alert" {{ '' if error else 'hidden' }}>
+          {{ error or '' }}
+        </div>
+
+        {% if mode == 'daftar' %}
+        <!-- ================= FORMULIR DAFTAR ================= -->
+        <div id="paneDaftar">
+          <h2>Buat akun Art_ku</h2>
+          <p class="auth-sub">Daftar dengan email atau akun Google kamu.</p>
+
+          <form id="formDaftar" method="post" action="{{ url_for('proses_daftar') }}" novalidate>
+            <div class="field">
+              <label for="emailDaftar">Alamat email</label>
+              <input
+                type="email"
+                id="emailDaftar"
+                name="email"
+                placeholder="nama@email.com"
+                value="{{ email or '' }}"
+                autocomplete="email"
+                required
+              >
+              <p class="field-err" id="errEmailDaftar" hidden></p>
+            </div>
+
+            <div class="field">
+              <label for="sandiDaftar">Kata sandi</label>
+              <div class="pw-box">
+                <input
+                  type="password"
+                  id="sandiDaftar"
+                  name="sandi"
+                  placeholder="Buat kata sandi"
+                  autocomplete="new-password"
+                  required
+                >
+                <button type="button" class="pw-toggle" data-toggle-pw="sandiDaftar">Tampilkan</button>
+              </div>
+              <small class="field-hint">Gunakan minimal 8 karakter.</small>
+              <p class="field-err" id="errSandiDaftar" hidden></p>
+            </div>
+
+            <div class="field">
+              <label for="konfirmasiDaftar">Konfirmasi kata sandi</label>
+              <div class="pw-box">
+                <input
+                  type="password"
+                  id="konfirmasiDaftar"
+                  name="konfirmasi"
+                  placeholder="Ulangi kata sandi"
+                  autocomplete="new-password"
+                  required
+                >
+                <button type="button" class="pw-toggle" data-toggle-pw="konfirmasiDaftar">Tampilkan</button>
+              </div>
+              <p class="field-err" id="errKonfirmasiDaftar" hidden></p>
+            </div>
+
+            <button type="submit" class="btn blk" id="btnDaftar">Buat akun</button>
+            <p class="loading-note" id="loadingDaftarNote" hidden>Tunggu sebentar, akunmu sedang dibuat.</p>
+          </form>
+
+          <div class="auth-sep"><span>atau lanjutkan dengan</span></div>
+          <button type="button" class="btn g blk google-btn" id="btnGoogleDaftar">
+            Lanjutkan dengan Google
+          </button>
+
+          <p class="auth-switch">
+            Sudah punya akun? <a href="{{ url_for('halaman_masuk') }}">Masuk</a>
+          </p>
+        </div>
+
+        {% else %}
+        <!-- ================= FORMULIR MASUK ================= -->
+        <div id="paneMasuk">
+          <h2>Selamat datang kembali</h2>
+          <p class="auth-sub">Masuk dengan email atau akun Google kamu.</p>
+
+          <form id="formMasuk" method="post" action="{{ url_for('proses_login') }}" novalidate>
+            <div class="field">
+              <label for="emailMasuk">Alamat email</label>
+              <input
+                type="email"
+                id="emailMasuk"
+                name="email"
+                placeholder="nama@email.com"
+                value="{{ email or '' }}"
+                autocomplete="email"
+                required
+              >
+              <p class="field-err" id="errEmailMasuk" hidden></p>
+            </div>
+
+            <div class="field">
+              <label for="sandiMasuk">Kata sandi</label>
+              <div class="pw-box">
+                <input
+                  type="password"
+                  id="sandiMasuk"
+                  name="sandi"
+                  placeholder="Masukkan kata sandi"
+                  autocomplete="current-password"
+                  required
+                >
+                <button type="button" class="pw-toggle" data-toggle-pw="sandiMasuk">Tampilkan</button>
+              </div>
+              <div class="forgot-row">
+                <a href="{{ url_for('lupa_kata_sandi') }}" class="forgot-link">Lupa kata sandi?</a>
+              </div>
+            </div>
+
+            <button type="submit" class="btn blk" id="btnMasuk">Masuk</button>
+            <p class="loading-note" id="loadingMasukNote" hidden>Memeriksa akunmu, tunggu sebentar.</p>
+          </form>
+
+          <div class="auth-sep"><span>atau lanjutkan dengan</span></div>
+          <button type="button" class="btn g blk google-btn" id="btnGoogleMasuk">
+            Lanjutkan dengan Google
+          </button>
+
+          <p class="auth-switch">
+            Belum punya akun? <a href="{{ url_for('halaman_daftar') }}">Daftar</a>
+          </p>
+        </div>
+        {% endif %}
+      </section>
+    </div>
+  </main>
+
+  <!-- Firebase JS SDK -->
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+  <script src="{{ url_for('static', filename='js/firebase-config.js') }}"></script>
+  <script>
+    document.addEventListener("DOMContentLoaded", () => {
+      // Toggle Tampilkan / Sembunyikan kata sandi (sesuai wireframe "Sandi terlihat")
+      document.querySelectorAll("[data-toggle-pw]").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          const target = document.getElementById(btn.getAttribute("data-toggle-pw"));
+          if (!target) return;
+          const terbuka = target.type === "text";
+          target.type = terbuka ? "password" : "text";
+          btn.textContent = terbuka ? "Tampilkan" : "Sembunyikan";
+        });
+      });
+
+      const resetErrorState = () => {
+        document.querySelectorAll(".field-err").forEach((el) => {
+          el.hidden = true;
+          el.textContent = "";
+        });
+        document.querySelectorAll(".field input").forEach((inp) => inp.classList.remove("input-err"));
+        const banner = document.getElementById("authErrorBanner");
+        if (banner) {
+          banner.hidden = true;
+          banner.textContent = "";
+        }
+      };
+
+      // ================= ALUR REGISTRASI (Sequence s1 & Activity a1) =================
+      const formDaftar = document.getElementById("formDaftar");
+      if (formDaftar) {
+        formDaftar.addEventListener("submit", async (e) => {
+          e.preventDefault();
+          resetErrorState();
+
+          const emailEl = document.getElementById("emailDaftar");
+          const sandiEl = document.getElementById("sandiDaftar");
+          const konfEl = document.getElementById("konfirmasiDaftar");
+          const btnDaftar = document.getElementById("btnDaftar");
+          const loadingNote = document.getElementById("loadingDaftarNote");
+
+          const email = (emailEl.value || "").trim();
+          const sandi = sandiEl.value || "";
+          const konfirmasi = konfEl.value || "";
+
+          // Langkah 2 Sequence s1: cekKonfirmasiSandi() di antarmuka sebelum memanggil Firebase
+          if (!window.ArtKuAuth.cekKonfirmasiSandi(sandi, konfirmasi)) {
+            konfEl.classList.add("input-err");
+            window.ArtKuAuth.tampilkanPesanError(
+              "Konfirmasi kata sandi tidak cocok.",
+              "errKonfirmasiDaftar"
+            );
+            return;
+          }
+
+          btnDaftar.disabled = true;
+          btnDaftar.textContent = "Membuat akun…";
+          if (loadingNote) loadingNote.hidden = false;
+
+          try {
+            let idToken = null;
+            try {
+              // Langkah 3 Sequence s1: buatAkun(email, sandi) via Firebase JS SDK
+              idToken = await window.ArtKuAuth.buatAkun(email, sandi);
+            } catch (fbErr) {
+              if (fbErr && fbErr.code) {
+                throw fbErr;
+              }
+            }
+
+            // Langkah 5–14 Sequence s1: kirim ID token ke WebController.daftar()
+            const { ok, data } = await window.ArtKuAuth.kirimTokenKeBackend("/daftar", idToken, {
+              email,
+              sandi,
+              konfirmasi
+            });
+            if (!ok) {
+              window.ArtKuAuth.tampilkanPesanError(
+                data.error || "Pendaftaran gagal. Silakan coba lagi.",
+                "authErrorBanner"
+              );
+              return;
+            }
+            window.ArtKuAuth.tampilkanHalamanUtama(data.redirect || "/studio");
+          } catch (err) {
+            const info = window.ArtKuAuth.terjemahkanErrorFirebase(err);
+            if (info.field === "email") {
+              emailEl.classList.add("input-err");
+              window.ArtKuAuth.tampilkanPesanError(info.pesan, "errEmailDaftar");
+            } else if (info.field === "sandi") {
+              sandiEl.classList.add("input-err");
+              window.ArtKuAuth.tampilkanPesanError(info.pesan, "errSandiDaftar");
+            } else {
+              window.ArtKuAuth.tampilkanPesanError(info.pesan, "authErrorBanner");
+            }
+          } finally {
+            btnDaftar.disabled = false;
+            btnDaftar.textContent = "Buat akun";
+            if (loadingNote) loadingNote.hidden = true;
+          }
+        });
+      }
+
+      // ================= ALUR LOGIN (Sequence s2 & Activity a2) =================
+      const formMasuk = document.getElementById("formMasuk");
+      if (formMasuk) {
+        formMasuk.addEventListener("submit", async (e) => {
+          e.preventDefault();
+          resetErrorState();
+
+          const emailEl = document.getElementById("emailMasuk");
+          const sandiEl = document.getElementById("sandiMasuk");
+          const btnMasuk = document.getElementById("btnMasuk");
+          const loadingNote = document.getElementById("loadingMasukNote");
+
+          const email = (emailEl.value || "").trim();
+          const sandi = sandiEl.value || "";
+
+          btnMasuk.disabled = true;
+          btnMasuk.textContent = "Sedang masuk…";
+          if (loadingNote) loadingNote.hidden = false;
+
+          try {
+            let idToken = null;
+            try {
+              // Langkah 2 Sequence s2: masukDenganEmail(email, sandi) via Firebase JS SDK
+              idToken = await window.ArtKuAuth.masukDenganEmail(email, sandi);
+            } catch (fbErr) {
+              if (fbErr && fbErr.code) {
+                throw fbErr;
+              }
+            }
+
+            // Langkah 7–16 Sequence s2: kirim ID Token ke WebController.login()
+            const { ok, data } = await window.ArtKuAuth.kirimTokenKeBackend("/login", idToken, {
+              email,
+              sandi
+            });
+            if (!ok) {
+              window.ArtKuAuth.tampilkanPesanError(
+                data.error || "Email atau kata sandi salah. Coba lagi.",
+                "authErrorBanner"
+              );
+              return;
+            }
+            window.ArtKuAuth.tampilkanHalamanUtama(data.redirect || "/studio");
+          } catch (err) {
+            const info = window.ArtKuAuth.terjemahkanErrorFirebase(err);
+            window.ArtKuAuth.tampilkanPesanError(info.pesan, "authErrorBanner");
+          } finally {
+            btnMasuk.disabled = false;
+            btnMasuk.textContent = "Masuk";
+            if (loadingNote) loadingNote.hidden = true;
+          }
+        });
+      }
+
+      // ================= ALUR GOOGLE (Daftar / Masuk dengan Google) =================
+      const jalankanGoogle = async () => {
+        resetErrorState();
+        try {
+          const idToken = await window.ArtKuAuth.masukDenganGoogle();
+          const { ok, data } = await window.ArtKuAuth.kirimTokenKeBackend("/auth/google", idToken);
+          if (!ok) {
+            window.ArtKuAuth.tampilkanPesanError(
+              data.error || "Otorisasi Google gagal.",
+              "authErrorBanner"
+            );
+            return;
+          }
+          window.ArtKuAuth.tampilkanHalamanUtama(data.redirect || "/studio");
+        } catch (err) {
+          const info = window.ArtKuAuth.terjemahkanErrorFirebase(err);
+          window.ArtKuAuth.tampilkanPesanError(info.pesan, "authErrorBanner");
+        }
+      };
+
+      const btnGoogleDaftar = document.getElementById("btnGoogleDaftar");
+      const btnGoogleMasuk = document.getElementById("btnGoogleMasuk");
+      if (btnGoogleDaftar) btnGoogleDaftar.addEventListener("click", jalankanGoogle);
+      if (btnGoogleMasuk) btnGoogleMasuk.addEventListener("click", jalankanGoogle);
+    });
+  </script>
+</body>
+</html>

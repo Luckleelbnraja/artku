@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Riwayat Analisis — Art_ku</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Figtree:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body data-filter-aktif="{{ filterAktif }}" data-urutan-aktif="{{ urutanAktif }}">
+  <header class="nav">
+    <div class="w">
+      <a class="brand" href="{{ url_for('buka_studio') }}"><i></i>Art_ku</a>
+      <ul>
+        <li><a href="{{ url_for('buka_studio') }}#cara">Cara kerja</a></li>
+        <li><a href="{{ url_for('buka_studio') }}#studio">Studio analisis</a></li>
+        <li><a href="{{ url_for('buka_studio') }}#batas">Batasan</a></li>
+        <li><a href="{{ url_for('buka_riwayat') }}" class="active">Riwayat</a></li>
+      </ul>
+      <button type="button" class="btn g nav-logout" data-action="logout">Keluar</button>
+    </div>
+  </header>
+
+  <main class="hist-main">
+    <div class="w">
+      <!-- Header Riwayat & Ringkasan Statistik (total, jumlahAIArt, jumlahHumanArt) -->
+      <section class="hist-top">
+        <div>
+          <h1>Riwayat analisis</h1>
+          <p class="mut">Daftar gambar yang pernah kamu klasifikasikan beserta hasil prediksi dan peta panasnya.</p>
+        </div>
+
+        <div class="hist-summary" aria-label="Ringkasan riwayat klasifikasi">
+          <div class="sum-item">
+            <span class="sum-lbl">Total</span>
+            <strong id="sumTotal">{{ ringkasan.total }}</strong>
+          </div>
+          <div class="sum-item">
+            <span class="sum-lbl">AI Art</span>
+            <strong id="sumAi" style="color:var(--ai)">{{ ringkasan.jumlahAIArt }}</strong>
+          </div>
+          <div class="sum-item">
+            <span class="sum-lbl">Human Art</span>
+            <strong id="sumHuman" style="color:var(--hum)">{{ ringkasan.jumlahHumanArt }}</strong>
+          </div>
+        </div>
+      </section>
+
+      <!-- Baris Filter & Urutan -->
+      <section class="hist-toolbar">
+        <div class="filter-pills" role="group" aria-label="Filter label">
+          <button
+            type="button"
+            class="pill {{ 'active' if filterAktif == 'semua' else '' }}"
+            data-filter="semua"
+          >Semua</button>
+          <button
+            type="button"
+            class="pill {{ 'active' if filterAktif == 'ai' else '' }}"
+            data-filter="ai"
+          >AI Art</button>
+          <button
+            type="button"
+            class="pill {{ 'active' if filterAktif == 'human' else '' }}"
+            data-filter="human"
+          >Human Art</button>
+        </div>
+
+        <div class="sort-box">
+          <label for="selectUrutan" class="sr-only">Urutkan</label>
+          <select id="selectUrutan" aria-label="Urutkan riwayat">
+            <option value="terbaru" {{ 'selected' if urutanAktif == 'terbaru' else '' }}>Urutkan: Terbaru</option>
+            <option value="terlama" {{ 'selected' if urutanAktif == 'terlama' else '' }}>Urutkan: Terlama</option>
+            <option value="keyakinan_tinggi" {{ 'selected' if urutanAktif == 'keyakinan_tinggi' else '' }}>Urutkan: Keyakinan tertinggi</option>
+            <option value="keyakinan_rendah" {{ 'selected' if urutanAktif == 'keyakinan_rendah' else '' }}>Urutkan: Keyakinan terendah</option>
+          </select>
+        </div>
+      </section>
+
+      <!-- Keadaan Kosong (Activity Diagram a4: Riwayat kosong? -> Menampilkan keadaan kosong) -->
+      <section class="hist-empty" id="riwayatKosong" {{ '' if not riwayat else 'hidden' }}>
+        <div class="hist-empty-box">
+          <h3>Belum ada riwayat analisis</h3>
+          <p class="mut">
+            Unggah karya seni digital di Studio analisis untuk menyimpan prediksi beserta peta panas Grad-CAM di sini.
+          </p>
+          <a href="{{ url_for('buka_studio') }}#studio" class="btn" style="margin-top:1rem">Buka Studio analisis</a>
+        </div>
+      </section>
+
+      <!-- Daftar Kartu Riwayat (3 kolom sesuai wireframe PDF) -->
+      <section class="hist-grid" id="riwayatGrid" {{ 'hidden' if not riwayat else '' }}>
+        {% for item in riwayat %}
+        {% set isAi = item.label.value == 'AI_ART' %}
+        <article class="hist-card" data-id="{{ item.id }}">
+          <div class="hist-thumb">
+            <img src="{{ url_for('static', filename=item.imagePath) }}" alt="{{ item.fileName }}" loading="lazy">
+            <span class="hist-fname">{{ item.fileName }}</span>
+          </div>
+          <div class="hist-body">
+            <div class="hist-meta">
+              <span class="hist-badge {{ 'badge-ai' if isAi else 'badge-human' }}">
+                {{ item.label.teks }}
+              </span>
+              <span class="hist-conf">Keyakinan {{ item.confidence | persen_id }}%</span>
+            </div>
+            <p class="hist-time">{{ item.timestamp | tanggal_id }}</p>
+            <div class="hist-actions">
+              <a class="btn hist-view" href="{{ url_for('lihat_hasil', id=item.id) }}" data-id="{{ item.id }}">Lihat hasil</a>
+              <button
+                type="button"
+                class="btn g hist-del"
+                data-del-id="{{ item.id }}"
+                data-del-name="{{ item.fileName }}"
+              >Hapus</button>
+            </div>
+          </div>
+        </article>
+        {% endfor %}
+      </section>
+    </div>
+  </main>
+
+  <footer>
+    <div class="w">
+      <span>Telusur, deteksi karya seni AI dan manusia</span>
+      <a href="{{ url_for('buka_studio') }}#studio">Kembali ke studio</a>
+    </div>
+  </footer>
+
+  <!-- Dialog Konfirmasi Hapus Riwayat (Sequence Diagram s4 langkah 14–15) -->
+  <div class="modal-backdrop" id="deleteModal" role="dialog" aria-modal="true" aria-labelledby="deleteTitle" hidden>
+    <div class="modal-card">
+      <h3 id="deleteTitle">Hapus riwayat analisis ini?</h3>
+      <p class="mut" style="margin:.6rem 0 1.2rem">
+        Data riwayat <strong id="deleteFileName"></strong> beserta file gambar dan peta panas Grad-CAM akan dihapus permanen.
+      </p>
+      <div class="modal-actions">
+        <button type="button" class="btn blk" id="btnKonfirmasiHapus">Hapus</button>
+        <button type="button" class="btn g blk" id="btnBatalHapus">Batal</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Dialog Konfirmasi Keluar (Sequence Diagram s6 & Activity Diagram a6) -->
+  <div class="modal-backdrop" id="logoutModal" role="dialog" aria-modal="true" aria-labelledby="logoutTitle" hidden>
+    <div class="modal-card split">
+      <div class="modal-left">
+        <h2 id="logoutTitle">Selesai untuk sekarang?</h2>
+        <p class="mut">
+          Terima kasih sudah menjelajahi karya bersama Art_ku. Kamu bisa kembali kapan saja.
+        </p>
+        <ol class="auth-points">
+          <li>
+            <span class="num">1</span>
+            <span>Riwayat analisis tetap tersimpan di akunmu.</span>
+          </li>
+          <li>
+            <span class="num">2</span>
+            <span>Masuk kembali untuk melanjutkan analisis karya.</span>
+          </li>
+        </ol>
+      </div>
+      <div class="modal-right">
+        <h3>Keluar dari Art_ku?</h3>
+        <p class="mut">
+          Kamu akan keluar dari akun ini. Untuk membuka studio dan riwayat analisis, kamu perlu masuk kembali.
+        </p>
+        <div class="modal-actions">
+          <button type="button" class="btn blk" id="btnKonfirmasiKeluar">Keluar</button>
+          <button type="button" class="btn g blk" id="btnBatalKeluar">Batal</button>
+        </div>
+        <p class="fine" style="text-align:center;margin-top:.8rem">
+          Belum ingin keluar? Pilih Batal untuk kembali ke studio.
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <script src="{{ url_for('static', filename='js/riwayat.js') }}"></script>
+</body>
+</html>

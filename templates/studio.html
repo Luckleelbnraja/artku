@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Art_ku — Studio Analisis Klasifikasi Citra Seni</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Figtree:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+  <header class="nav">
+    <div class="w">
+      <a class="brand" href="{{ url_for('buka_studio') }}"><i></i>Art_ku</a>
+      <ul>
+        <li><a href="#cara">Cara kerja</a></li>
+        <li><a href="#studio" class="active">Studio analisis</a></li>
+        <li><a href="#batas">Batasan</a></li>
+        <li><a href="{{ url_for('buka_riwayat') }}">Riwayat</a></li>
+      </ul>
+      <button type="button" class="btn g nav-logout" data-action="logout">Keluar</button>
+    </div>
+  </header>
+
+  <main>
+    <!-- Hero Section -->
+    <div class="w">
+      <section class="hero">
+        <div>
+          <h1>Mana yang dilukis tangan, mana yang dihitung mesin?</h1>
+          <p class="lead">
+            Unggah karya seni digital. Telusur menebak buatan manusia atau AI, lalu menunjukkan bagian gambar yang membuat model yakin.
+          </p>
+          <div class="cta">
+            <a class="btn" href="#studio">Unggah karya seni</a>
+            <a class="btn g" href="#cara">Lihat cara kerja</a>
+          </div>
+        </div>
+        <div>
+          <div class="frame">
+            <canvas
+              id="lens"
+              role="img"
+              aria-label="Lukisan abstrak. Lensa yang mengikuti kursor memperlihatkan cara model melihat: kotak piksel dan peta panas."
+            ></canvas>
+          </div>
+          <p class="hint">
+            Geser kursor atau jari di atas lukisan. Di dalam lensa, kamu melihat gambar seperti yang dilihat model.
+          </p>
+        </div>
+      </section>
+    </div>
+
+    <!-- Cara Kerja Section -->
+    <section class="sec" id="cara" style="padding-top:1rem">
+      <div class="w">
+        <div class="sh">
+          <h2>Empat langkah dari unggahan sampai alasan</h2>
+          <p>Hasilnya bukan sekadar label. Kamu bisa memeriksa alasannya sendiri.</p>
+        </div>
+        <ol class="steps">
+          <li>
+            <h3>Unggah gambar</h3>
+            <p>JPG, JPEG, PNG, atau WEBP sampai 10 MB. Format dan ukuran diperiksa lebih dulu.</p>
+          </li>
+          <li>
+            <h3>Gambar disiapkan</h3>
+            <p>Ukuran disamakan dan warna dinormalisasi agar cocok dengan data latih.</p>
+          </li>
+          <li>
+            <h3>Model membaca</h3>
+            <p>Swin Transformer memecah gambar menjadi potongan kecil dan menilai pola khas AI atau manusia.</p>
+          </li>
+          <li>
+            <h3>Kamu melihat alasannya</h3>
+            <p>Prediksi, tingkat keyakinan, peta panas Grad-CAM, dan ringkasan hasil analisis.</p>
+          </li>
+        </ol>
+      </div>
+    </section>
+
+    <!-- Studio Analisis Section -->
+    <section class="sec" id="studio" style="padding-top:0">
+      <div class="w">
+        <div class="studio">
+          <div class="sh">
+            <h2>Studio analisis</h2>
+            <p>Gambar dan hasil analisis disimpan di riwayat akunmu</p>
+          </div>
+
+          <div class="grid">
+            <!-- Panel Kiri: Unggah & Pratinjau Gambar -->
+            <div class="pan">
+              <label class="drop" id="drop">
+                <input
+                  type="file"
+                  id="file"
+                  accept="image/jpg,image/jpeg,image/png,image/webp"
+                  aria-label="Pilih gambar"
+                >
+                <div>
+                  <svg viewBox="0 0 48 48" aria-hidden="true">
+                    <path d="M8 34l10-12 8 9 6-6 10 9M8 8h32v32H8zM32 17a2 2 0 1 0 .01 0"/>
+                  </svg>
+                  <b id="dropTitle">Tarik gambar ke sini</b><br>
+                  <small>atau klik untuk memilih. JPG, JPEG, PNG, WEBP, maksimal 10 MB</small>
+                </div>
+              </label>
+
+              <div class="stage" id="stage">
+                <img id="pv" alt="Pratinjau gambar">
+                <div class="invalid-preview" id="invalidBox" hidden>
+                  <b>Pratinjau tidak tersedia</b>
+                  <p>Pilih JPG, JPEG, PNG, atau WEBP.</p>
+                </div>
+                <div class="scan"></div>
+              </div>
+
+              <p class="file-meta" id="fileMeta" hidden></p>
+              <p class="file-warn" id="fileWarn" role="alert" hidden></p>
+              <p class="status-baca" id="statusBaca" hidden>Sedang membaca gambar. Tunggu sebentar.</p>
+
+              <div class="acts">
+                <button type="button" class="btn g" id="clr" hidden>Ganti gambar</button>
+                <button type="button" class="btn" id="go" disabled>Analisis gambar</button>
+              </div>
+            </div>
+
+            <!-- Panel Kanan: Hasil Prediksi & Grad-CAM -->
+            <div class="pan" aria-live="polite">
+              <div class="err" id="err" role="alert" hidden></div>
+
+              <div class="emp" id="emp">
+                <div>
+                  <svg viewBox="0 0 48 48" aria-hidden="true">
+                    <circle cx="24" cy="24" r="16"/>
+                    <path d="M24 8v32M8 24h32"/>
+                  </svg>
+                  <p>Hasil prediksi muncul di sini setelah kamu memilih gambar dan menekan Analisis gambar.</p>
+                </div>
+              </div>
+
+              <div id="res" hidden>
+                <div class="res">
+                  <svg class="ring" viewBox="0 0 132 132" role="img" aria-label="Diagram lingkaran peluang Human Art dan AI Art">
+                    <g transform="rotate(-90 66 66)">
+                      <circle cx="66" cy="66" r="52" stroke="#0004"/>
+                      <circle id="rh" cx="66" cy="66" r="52" stroke="#F2B25C" stroke-dasharray="0 327"/>
+                      <circle id="ra" cx="66" cy="66" r="52" stroke="#8493FF" stroke-dasharray="0 327"/>
+                    </g>
+                  </svg>
+                  <div>
+                    <p class="fine">Prediksi model</p>
+                    <p class="vd" id="vd"></p>
+                    <p id="cf" class="mut"></p>
+                  </div>
+                </div>
+
+                <div class="bars">
+                  <div class="bar">
+                    <span style="color:var(--hum)">Human Art</span>
+                    <i><s id="bh" style="background:var(--hum)"></s></i>
+                    <span id="th"></span>
+                  </div>
+                  <div class="bar">
+                    <span style="color:var(--ai)">AI Art</span>
+                    <i><s id="ba" style="background:var(--ai)"></s></i>
+                    <span id="ta"></span>
+                  </div>
+                </div>
+
+                <p class="fine" style="margin-top:.85rem">Gambar dan hasil analisis disimpan di riwayat akunmu</p>
+
+                <button type="button" class="btn g blk" id="ex" style="margin-top:1rem">
+                  Tampilkan Grad-CAM
+                </button>
+
+                <div class="cam" id="cam" hidden>
+                  <b>Bagian yang paling memengaruhi keputusan</b>
+                  <div class="cmp" id="cmp">
+                    <img id="io" alt="Gambar asli">
+                    <div class="top" id="tp">
+                      <img id="ih" alt="Gambar dengan overlay Grad-CAM">
+                    </div>
+                    <div class="bar2" id="b2"></div>
+                    <span class="l1">Grad-CAM</span>
+                    <span class="l2">Asli</span>
+                  </div>
+                  <input
+                    type="range"
+                    id="sl"
+                    min="0"
+                    max="100"
+                    value="50"
+                    aria-label="Geser untuk membandingkan gambar asli dan Grad-CAM"
+                  >
+                  <p class="fine" style="margin-top:.8rem">
+                    Merah dan kuning paling berpengaruh. Peta panas menunjukkan di mana model melihat, bukan bukti bahwa keputusannya benar.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Tentang Model & Batasannya -->
+    <section class="sec" id="batas" style="padding-top:0">
+      <div class="w">
+        <div class="two">
+          <div>
+            <h3>Tentang model</h3>
+            <p class="mut">
+              Swin Transformer dilatih pada gambar 224×224 dari beberapa generator (Stable Diffusion, Latent Diffusion, Midjourney). Akurasi 97,4% pada data uji.
+            </p>
+          </div>
+          <div>
+            <h3>Batasannya</h3>
+            <p class="mut">
+              Karya digital buatan manusia lebih sering salah dikira AI, dan generator yang tidak ada di data latih mungkin tidak dikenali. Anggap hasil ini petunjuk, bukan putusan.
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <div class="w">
+      <span>Telusur, deteksi karya seni AI dan manusia</span>
+      <a href="#studio">Kembali ke studio</a>
+    </div>
+  </footer>
+
+  <!-- Dialog Konfirmasi Keluar (Sequence Diagram s6 & Activity Diagram a6) -->
+  <div class="modal-backdrop" id="logoutModal" role="dialog" aria-modal="true" aria-labelledby="logoutTitle" hidden>
+    <div class="modal-card split">
+      <div class="modal-left">
+        <h2 id="logoutTitle">Selesai untuk sekarang?</h2>
+        <p class="mut">
+          Terima kasih sudah menjelajahi karya bersama Art_ku. Kamu bisa kembali kapan saja.
+        </p>
+        <ol class="auth-points">
+          <li>
+            <span class="num">1</span>
+            <span>Riwayat analisis tetap tersimpan di akunmu.</span>
+          </li>
+          <li>
+            <span class="num">2</span>
+            <span>Masuk kembali untuk melanjutkan analisis karya.</span>
+          </li>
+        </ol>
+      </div>
+      <div class="modal-right">
+        <h3>Keluar dari Art_ku?</h3>
+        <p class="mut">
+          Kamu akan keluar dari akun ini. Untuk membuka studio dan riwayat analisis, kamu perlu masuk kembali.
+        </p>
+        <div class="modal-actions">
+          <button type="button" class="btn blk" id="btnKonfirmasiKeluar">Keluar</button>
+          <button type="button" class="btn g blk" id="btnBatalKeluar">Batal</button>
+        </div>
+        <p class="fine" style="text-align:center;margin-top:.8rem">
+          Belum ingin keluar? Pilih Batal untuk kembali ke studio.
+        </p>
+      </div>
+    </div>
+  </div>
+
+  {% if hasilAwal %}
+  <script>
+    window.HASIL_AWAL_RIWAYAT = {{ hasilAwal | tojson }};
+  </script>
+  {% endif %}
+  <script src="{{ url_for('static', filename='js/hero.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/studio.js') }}"></script>
+</body>
+</html>

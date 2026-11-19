@@ -1,0 +1,16 @@
+# Kredensial, environment, bobot model, dan unggahan lokal
+serviceAccountKey.json
+.env
+*.pt
+static/uploads/
+
+# Python & lingkungan virtual
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+env/
+.pytest_cache/
+.vscode/
+.idea/

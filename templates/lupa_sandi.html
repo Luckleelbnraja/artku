@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Lupa Kata Sandi — Art_ku</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Figtree:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body class="auth-page">
+  <header class="auth-topbar">
+    <div class="w">
+      <a class="brand" href="{{ url_for('halaman_masuk') }}"><i></i>Art_ku</a>
+    </div>
+  </header>
+
+  <main class="auth-wrap">
+    <div class="auth-card">
+      <!-- Kolom Kiri -->
+      <section class="auth-pitch">
+        <h1>Kembali ke Art_ku</h1>
+        <p class="auth-lead">
+          Lupa kata sandi? Tenang, kamu bisa mengatur ulang kata sandi dan kembali mengakses riwayat analisis karya senimu.
+        </p>
+        <ol class="auth-steps-list">
+          <li>1. Masukkan email yang terdaftar di akunmu.</li>
+          <li>2. Buka tautan pemulihan yang dikirim ke email.</li>
+          <li>3. Buat kata sandi baru di halaman yang terbuka dari tautan itu, lalu masuk kembali ke Art_ku.</li>
+        </ol>
+      </section>
+
+      <!-- Kolom Kanan -->
+      <section class="auth-form-pane">
+        <!-- State 1: Formulir permintaan tautan pemulihan -->
+        <div id="paneFormReset" {{ 'hidden' if terkirim else '' }}>
+          <a href="{{ url_for('halaman_masuk') }}" class="back-link">Kembali ke masuk</a>
+          <h2>Lupa kata sandi?</h2>
+          <p class="auth-sub">
+            Masukkan email akunmu. Kami akan mengirim tautan untuk mengatur ulang kata sandi.
+          </p>
+
+          <form id="formLupaSandi" method="post" action="{{ url_for('lupa_kata_sandi') }}" novalidate>
+            <div class="field">
+              <label for="emailReset">Alamat email</label>
+              <input
+                type="email"
+                id="emailReset"
+                name="email"
+                placeholder="nama@email.com"
+                value="{{ email or '' }}"
+                class="{{ 'input-err' if error else '' }}"
+                required
+              >
+              <p class="field-err" id="errEmailReset" {{ '' if error else 'hidden' }}>{{ error or '' }}</p>
+            </div>
+
+            <button type="submit" class="btn blk" id="btnKirimReset">Kirim tautan pemulihan</button>
+          </form>
+
+          <p class="reset-foot">Periksa kotak masuk dan folder spam setelah mengirim permintaan.</p>
+          <p class="auth-switch">Sudah ingat kata sandi? <a href="{{ url_for('halaman_masuk') }}">Masuk</a></p>
+          <p class="reset-google-note">
+            Daftar dengan Google? Masuk lewat tombol Lanjutkan dengan Google.
+          </p>
+        </div>
+
+        <!-- State 2: Tautan terkirim • pesan netral (Sequence Diagram s5 langkah 7) -->
+        <div id="panePesanNetral" {{ '' if terkirim else 'hidden' }}>
+          <a href="{{ url_for('halaman_masuk') }}" class="back-link">Kembali ke masuk</a>
+          <h2>Periksa email kamu</h2>
+          <p class="auth-sub" id="teksPesanNetral">
+            Periksa kotak masuk Anda untuk tautan pemulihan kata sandi. Jika email ini terdaftar, tautan pemulihan akan dikirim. Periksa kotak masuk dan folder spam.
+          </p>
+
+          <button type="button" class="btn blk" id="btnKirimUlang">Kirim ulang</button>
+          <p class="reset-foot">Belum menerima email? Kamu bisa mengirim ulang.</p>
+          <p class="auth-switch"><a href="{{ url_for('halaman_masuk') }}">Kembali ke masuk</a></p>
+          <p class="reset-google-note">
+            Daftar dengan Google? Masuk lewat tombol Lanjutkan dengan Google.
+          </p>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+  <script src="{{ url_for('static', filename='js/firebase-config.js') }}"></script>
+  <script>
+    document.addEventListener("DOMContentLoaded", () => {
+      const form = document.getElementById("formLupaSandi");
+      const emailEl = document.getElementById("emailReset");
+      const errEl = document.getElementById("errEmailReset");
+      const btnKirim = document.getElementById("btnKirimReset");
+      const btnKirimUlang = document.getElementById("btnKirimUlang");
+      const paneForm = document.getElementById("paneFormReset");
+      const paneNetral = document.getElementById("panePesanNetral");
+
+      const validasiEmail = (nilai) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(nilai);
+
+      async function kirimPermintaanReset(email) {
+        errEl.hidden = true;
+        emailEl.classList.remove("input-err");
+
+        if (!validasiEmail(email)) {
+          emailEl.classList.add("input-err");
+          errEl.textContent = "Format email tidak valid. Contoh: nama@email.com";
+          errEl.hidden = false;
+          return;
+        }
+
+        btnKirim.disabled = true;
+        btnKirim.textContent = "Mengirim tautan…";
+
+        try {
+          // 1) Jalankan sendPasswordResetEmail(email) via Firebase Auth JS SDK bila tersedia,
+          //    dan 2) teruskan ke WebController.lupaKataSandi(email) -> AuthService.kirimTautanPemulihan(email)
+          try {
+            await window.ArtKuAuth.kirimEmailReset(email);
+          } catch (fbErr) {
+            if (fbErr && fbErr.code && fbErr.code.includes("too-many-requests")) {
+              throw fbErr;
+            }
+            // Untuk user-not-found dsb., tetap lanjutkan dengan pesan netral sesuai Sequence s5
+          }
+
+          await fetch("/lupa-kata-sandi", {
+            method: "POST",
+            headers: { "Content-Type": "application/json", "Accept": "application/json" },
+            body: JSON.stringify({ email })
+          });
+
+          paneForm.hidden = true;
+          paneNetral.hidden = false;
+        } catch (err) {
+          const info = window.ArtKuAuth.terjemahkanErrorFirebase(err);
+          emailEl.classList.add("input-err");
+          errEl.textContent = info.pesan || "Tautan gagal dikirim. Coba lagi.";
+          errEl.hidden = false;
+          if (info.terlaluSering) {
+            btnKirim.textContent = "Coba lagi nanti";
+            return;
+          }
+        } finally {
+          if (btnKirim.textContent !== "Coba lagi nanti") {
+            btnKirim.disabled = false;
+            btnKirim.textContent = "Kirim tautan pemulihan";
+          }
+        }
+      }
+
+      if (form) {
+        form.addEventListener("submit", (e) => {
+          e.preventDefault();
+          kirimPermintaanReset((emailEl.value || "").trim());
+        });
+      }
+
+      if (btnKirimUlang) {
+        btnKirimUlang.addEventListener("click", () => {
+          paneNetral.hidden = true;
+          paneForm.hidden = false;
+          if (emailEl.value) {
+            kirimPermintaanReset(emailEl.value.trim());
+          }
+        });
+      }
+    });
+  </script>
+</body>
+</html>
