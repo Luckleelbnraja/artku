@@ -1,8 +1,9 @@
-# Kredensial, environment, bobot model, dan unggahan lokal
+# Kredensial, environment, bobot model, unggahan lokal, dan peluncur lokal
 serviceAccountKey.json
 .env
 *.pt
 static/uploads/
+jalankan_online.bat
 
 # Python & lingkungan virtual
 __pycache__/
